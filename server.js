@@ -20,6 +20,9 @@ app.get("/health", (req, res) => {
 });
 
 app.post("/chat", async (req, res) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+
   try {
     const userMessage = req.body.message;
 
@@ -42,12 +45,15 @@ app.post("/chat", async (req, res) => {
             {
               parts: [
                 {
-                  text: "You are TOM, a friendly, intelligent personal AI assistant. Respond naturally, clearly and helpfully. " + userMessage
+                  text:
+                    "You are TOM, a friendly, intelligent personal AI assistant. Respond naturally, clearly and helpfully. " +
+                    userMessage
                 }
               ]
             }
           ]
-        })
+        }),
+        signal: controller.signal
       }
     );
 
@@ -63,16 +69,25 @@ app.post("/chat", async (req, res) => {
     const reply =
       data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    res.json({
+    return res.json({
       reply: reply || "I couldn't generate a response."
     });
 
   } catch (error) {
     console.error("TOM error:", error);
 
-    res.status(500).json({
+    if (error.name === "AbortError") {
+      return res.status(504).json({
+        error: "TOM's AI brain took too long to respond. Please try again."
+      });
+    }
+
+    return res.status(500).json({
       error: "Something went wrong inside TOM."
     });
+
+  } finally {
+    clearTimeout(timeout);
   }
 });
 
