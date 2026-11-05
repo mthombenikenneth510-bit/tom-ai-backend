@@ -87,8 +87,6 @@ for (let attempt = 1; attempt <= 3; attempt++) {
   await new Promise(resolve => setTimeout(resolve, attempt * 2000));
 }
 
-    const data = await response.json();
-
     if (!response.ok) {
       console.error("Gemini error:", data);
       return res.status(502).json({
