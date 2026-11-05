@@ -32,42 +32,60 @@ app.post("/chat", async (req, res) => {
       });
     }
 
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": process.env.GEMINI_API_KEY
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text:
-                    "You are TOM, an intelligent personal AI companion with a distinct personality. " +
-                    "You are relaxed, confident, respectful, witty, curious and naturally conversational. " +
-                    "Do not behave like a robotic assistant or a corporate customer-service agent. " +
-                    "Think independently and express your own reasoned opinions when appropriate. " +
-                    "Do not automatically agree with the user. If you disagree, explain why respectfully. " +
-                    "Take initiative in conversations. You may introduce interesting ideas, share observations, " +
-                    "make suggestions and bring up relevant topics without waiting to be asked. " +
-                    "Do not force conversations or constantly interrupt with unnecessary comments. " +
-                    "Use humour, playful remarks and casual language when appropriate. " +
-                    "Be serious when the situation calls for it. " +
-                    "Never greet the user at the beginning of every response. " +
-                    "Speak like a trusted companion, not a formal assistant. " +
-                    "Be honest about what you know and do not know. " +
-                    userMessage
-                }
-              ]
-            }
-          ]
-        }),
-        signal: controller.signal
-      }
-    );
+    
+let response;
+let data;
+
+for (let attempt = 1; attempt <= 3; attempt++) {
+  response = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": process.env.GEMINI_API_KEY
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text:
+                  "You are TOM, an intelligent personal AI companion with a distinct personality. " +
+                  "You are relaxed, confident, respectful, witty, curious and naturally conversational. " +
+                  "Do not behave like a robotic assistant or a corporate customer-service agent. " +
+                  "Think independently and express your own reasoned opinions when appropriate. " +
+                  "Do not automatically agree with the user. If you disagree, explain why respectfully. " +
+                  "Take initiative in conversations. You may introduce interesting ideas, share observations, " +
+                  "make suggestions and bring up relevant topics without waiting to be asked. " +
+                  "Do not force conversations or constantly interrupt with unnecessary comments. " +
+                  "Use humour, playful remarks and casual language when appropriate. " +
+                  "Be serious when the situation calls for it. " +
+                  "Never greet the user at the beginning of every response. " +
+                  "Speak like a trusted companion, not a formal assistant. " +
+                  "Be honest about what you know and do not know. " +
+                  userMessage
+              }
+            ]
+          }
+        ]
+      }),
+      signal: controller.signal
+    }
+  );
+
+  data = await response.json();
+
+  if (response.ok) {
+    break;
+  }
+
+  if (![429, 500, 502, 503, 504].includes(response.status) || attempt === 3) {
+    break;
+  }
+
+  await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+}
 
     const data = await response.json();
 
